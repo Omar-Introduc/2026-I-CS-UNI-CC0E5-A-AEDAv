@@ -4,5 +4,6 @@
 // g++ -std=c++2b main.cpp containers/vector.cpp -o main
 int main(){
     DemoVector();
+    DemoReadVector();
     return 0;
 }

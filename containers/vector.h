@@ -74,9 +74,33 @@ ostream& operator<<(ostream& os, Vector<T>& v){
 // TODO: Implementar como PR
 template <typename T>
 istream& operator>>(istream& is, Vector<T>& v){
+char c;
+    if (!(is >> c) || c != '[') { 
+        is.setstate(std::ios::failbit); 
+        return is; 
+    }
+    string content;
+    if (!getline(is, content, ']')) {
+        is.setstate(std::ios::failbit); 
+        return is;
+    }
+    if (content.empty()) return is;
+    stringstream ss(content);
+    string token;
+    while (getline(ss, token, ',')) {
+        stringstream token_ss(token);
+        T data;
+        if (token_ss >> data) {
+            v.push_back(std::move(data));
+        } else {
+            is.setstate(std::ios::failbit);
+            break;
+        }
+    }
     return is;
 }
 
 void DemoVector();
+void DemoReadVector();
 
 #endif // __VECTOR_H__

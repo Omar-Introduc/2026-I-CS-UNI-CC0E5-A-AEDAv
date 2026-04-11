@@ -34,3 +34,17 @@ void DemoVector(){
     // of.close();
     
 }
+
+void DemoReadVector() {
+    ifstream in("temp.txt");
+
+    Vector<T1> v1_recuperado(2);
+    Vector<string> v2_recuperado(3);
+    Vector<string> v3_recuperado(4);
+
+    in >> v1_recuperado >> v2_recuperado;
+
+    cout << "t1 : " << v1_recuperado << endl;
+    cout << "str : " << v2_recuperado << endl;
+    cout << "str : " << v3_recuperado << endl;
+}
