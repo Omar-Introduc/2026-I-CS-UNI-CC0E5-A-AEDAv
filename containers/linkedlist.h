@@ -33,10 +33,10 @@ public:
 };
 
 // Linked List Node
-template <typename T, typename NodeType = LLNode<T>>
+template <typename T, typename NodeType = void>
 class LLNode{
 protected:
-    using Node = NodeType;
+    using Node = typename std::conditional<std::is_void<NodeType>::value, LLNode, NodeType>::type;
 private:
     T   m_data;
     Ref m_ref;
@@ -84,7 +84,7 @@ public:
     using forward_iterator = LinkedListForwardIterator<MySelf>;
     friend forward_iterator;
 
-private:
+protected:
     Node *m_pRoot = nullptr;
     Node *m_tail = nullptr;
     size_t m_size = 0;

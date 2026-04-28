@@ -1,12 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <thread>
 
 #include "../types.h"
 #include "linkedlist.h"
-// #include "doublelinkedlist.h"
-// #include "circularlinkedlist.h"
-// #include "circularlinkedlist.h"
+#include "circularlinkedlist.h"
+#include "doublelinkedlist.h"
+#include "circulardoublelinkedlist.h"
 
 using namespace std;
 
@@ -18,6 +19,7 @@ void DemoList(Container& list, string fileName){
     list.insert(4, 45);
     list.insert(35, 55);
     cout << list << endl;
+    
     // Grabar la lista en un archivo
     ofstream os(fileName);
     os << list << endl;
@@ -29,39 +31,75 @@ void DemoList(Container& list, string fileName){
 }
 
 void LinkedListDemo(){
-    LinkedList<T1, AscendingLinkedListTrait<T1>> list;
+    cout << "\n--- LinkedList Demo ---" << endl;
+    LinkedList<AscendingLinkedListTrait<T1>> list;
     DemoList(list, "AscLL.txt");
-    LinkedList<T1, DescendingLinkedListTrait<T1>> list2;
+    LinkedList<DescendingLinkedListTrait<T1>> list2;
     DemoList(list2, "DescLL.txt");
 }
 
+// T: Hacer un Demo
+void CircularLinkedListDemo(){
+    cout << "\n--- CircularLinkedList Demo ---" << endl;
+    CircularLinkedList<AscendingCLLTrait<T1>> list;
+    DemoList(list, "AscCLL.txt");
+    
+}
+
+// T: Hacer un Demo
 void DoubleLinkedListDemo(){
-    // DoubleLinkedList<T1, AscendingDLLTrait<T1>> list;
-    // DemoList(list, "AscDLL.txt");
-    // DoubleLinkedList<T1, DescendingDLLTrait<T1>> list2;
-    // DemoList(list2, "DescDLL.txt");
-}
-
-void CircularLinkedListDemo(){
+    cout << "\n--- DoubleLinkedList Demo ---" << endl;
     
-}
-
-void CircularLinkedListDemo(){
+    DoubleLinkedList<AscendingDLLTrait<T1>> list;
+    DemoList(list, "AscDLL.txt");
     
+    DoubleLinkedList<DescendingDLLTrait<T1>> list2;
+    DemoList(list2, "DescDLL.txt");
+    
+    cout << "Iterador Forward (for-each nativo):" << endl;
+    for (auto& item : list) {
+        cout << item << " ";
+    }
+    cout << endl;
+    
+    cout << "Iterador Backward (rbegin/rend):" << endl;
+    for (auto it = list.rbegin(); it != list.rend(); ++it) {
+        cout << *it << " ";
+    }
+    cout << endl;
+    
+    cout << "ReverseForEach con lambda:" << endl;
+    list.ReverseForEach([](auto& elem, ostream& os) {
+        os << elem << " ";
+    }, std::ref(cout));
+    cout << endl;
+    
+    cout << "Pop back (O(1) gracias a m_prev):" << endl;
+    auto [val, ref] = list.pop_back();
+    cout << "Extraido: (" << val << "," << ref << ")" << endl;
+    cout << "Lista despues del pop_back: " << list << endl;
+    
+    DoubleLinkedList<AscendingDLLTrait<T1>> listCopy(list);
+    cout << "Copy: " << listCopy << endl;
+    
+    DoubleLinkedList<AscendingDLLTrait<T1>> listMoved(std::move(listCopy));
+    cout << "Moved: " << listMoved << endl;
+    cout << "Original despues de move (vacia): " << listCopy << endl;
 }
 
-void ListsDemo(){
-    LinkedListDemo();
-    CircularLinkedListDemo();
-    DoubleLinkedListDemo();
-    CircularDoubleLinkedListDemo();
+// T: Hacer un Demo
+void CircularDoubleLinkedListDemo(){
+    cout << "\n--- CircularDoubleLinkedList Demo ---" << endl;
+    
+    // Demo con ordenamiento ascendente
+    CircularDoubleLinkedList<AscendingCDLLTrait<T1>> list;
+    DemoList(list, "AscCDLL.txt");
 }
 
 void TestConcurrencia() {
     cout << "\nTEST DE CONCURRENCIA" << endl;
     LinkedList<AscendingLinkedListTrait<T1>> list;
 
-    // 5 hilos van a intentar meter 1000 elementos cada uno al mismo tiempo
     auto worker = [&list](int thread_id) {
         for(int i = 0; i < 1000; i++) {
             list.push_front(i, thread_id);
@@ -84,27 +122,25 @@ void TestConcurrencia() {
         cout << "ESTADO: FALLO - Hubo corrupcion de memoria." << endl;
     }
 }
+
 void TestOperators() {
     cout << "\nTEST DE OPERADORES" << endl;
     LinkedList<AscendingLinkedListTrait<T1>> list;
     
-    // 1. Probamos operator>> (Lectura)
     cout << "Simulando lectura desde formato: [(10, 100), (20, 200), (30, 300)]" << endl;
     stringstream simulador_input("[(10, 100), (20, 200), (30, 300)]");
     simulador_input >> list;
 
-    // 2. Probamos operator<< (Escritura)
     cout << "Lista luego de la lectura (operator<<): " << list << endl;
-    
-    // 3. Probamos operator[] (Acceso seguro por indice)
     cout << "Accediendo al indice [0] (operator[]): Dato -> " << list[0] << endl;
     cout << "Accediendo al indice [2] (operator[]): Dato -> " << list[2] << endl;
-    
-    // Probamos la excepcion del operator[] (Descomentar para probar)
-    // cout << "Probando fuera de rango: " << list[5] << endl; // Lanzara la excepcion
 }
+
 void ListsDemo(){
-    TestBasicos();
+    LinkedListDemo();
+    CircularLinkedListDemo();
+    DoubleLinkedListDemo();
+    CircularDoubleLinkedListDemo();
     TestConcurrencia();
     TestOperators();
     cout << "\n=== FIN DE LAS PRUEBAS ===" << endl;

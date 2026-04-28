@@ -4,14 +4,21 @@
 #include <utility>
 
 template <typename Container, class IteratorBase> // 
-class general_iterator
-{public:
-    using Node = typename Container::Node;
-    using myself = general_iterator<Container, IteratorBase>;
+class general_iterator {
+public:
+    // Estándar de la Industria: Exportar tipos internos
+    using iterator_category = std::forward_iterator_tag;
+    using value_type      = typename Container::value_type;
+    using difference_type = std::ptrdiff_t;
+    using pointer         = value_type*;
+    using reference       = value_type&;
+    using Node            = typename Container::Node;
+    using node_pointer    = Node*;
+    using myself          = general_iterator<Container, IteratorBase>;
     
 protected:
     Container *m_pContainer;
-    Node      *m_pNode;
+    node_pointer m_pNode;
 public:
     general_iterator(Container *pContainer, Node *pNode)
         : m_pContainer(pContainer), m_pNode(pNode) {}
@@ -24,7 +31,7 @@ public:
     IteratorBase operator=(IteratorBase &iter)
           {   m_pContainer = move(iter.m_pContainer);
               m_pNode      = move(iter.m_pNode);
-              return *(IteratorBase *)this; // Pending static_cast?
+              return static_cast<IteratorBase&>(*this); // Usando static_cast seguro
           }
     Node *getNode() const { return m_pNode; }
     friend bool operator==(const IteratorBase &a, const IteratorBase &b) { return a.getNode() == b.getNode(); }

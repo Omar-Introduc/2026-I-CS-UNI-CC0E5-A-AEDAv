@@ -42,3 +42,7 @@
 *.tmp
 main
 temp.txt
+
+# Carpetas de estudio e investigación
+estudio/
+*.txt

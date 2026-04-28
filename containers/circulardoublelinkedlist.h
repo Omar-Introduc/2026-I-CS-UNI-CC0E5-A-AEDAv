@@ -1,78 +1,79 @@
-#ifndef __DOUBLELINKEDLIST_H__
-#define __DOUBLELINKEDLIST_H__
+#ifndef __CIRCULARDOUBLELINKEDLIST_H__
+#define __CIRCULARDOUBLELINKEDLIST_H__
 
-#include "linkedlist.h"
+#include "doublelinkedlist.h"
 
 template <typename T>
-class DLLNode : public LLNode<T, DLLNode<T>>{
-    using Node = DLLNode<T>;
-private:
-    Node *m_pPrev;
-public:
-    DLLNode() : LLNode<T, DLLNode<T>>(), m_pPrev(nullptr) {}
-    DLLNode(T data, Ref ref, Node *next = nullptr, Node *prev = nullptr) : LLNode<T, DLLNode<T>>(data, ref, next), m_pPrev(prev) {}
-
-    Node*  getPrev() const     { return m_pPrev; }
-    void   setPrev(Node *prev) { m_pPrev = prev; }
-    Node*& getPrevRef()        { return m_pPrev; }
-};
-
-// T: Adaptar Traits a BaseTrait (LL, DDLL)
-template <typename T>
-struct AscendingDLLTrait : BaseTrait<T, less<T>>{
+struct AscendingCDLLTrait : BaseTrait<T, less<T>>{
     using Node = DLLNode<T>;
 };
 
 template <typename T>
-struct DescendingDLLTrait : BaseTrait<T, greater<T>>{
+struct DescendingCDLLTrait : BaseTrait<T, greater<T>>{
     using Node = DLLNode<T>;
 };
 
-// T: Crear DoubleLinkedListForwardIterator (op++)
 template <typename Container>
-class DLLForwardIterator : public general_iterator<Container, DLLForwardIterator<Container>> {
+class CDLLForwardIterator : public general_iterator<Container, CDLLForwardIterator<Container>> {
 public:
-    using MySelf = DLLForwardIterator<Container>;
+    using MySelf = CDLLForwardIterator<Container>;
     using Parent = general_iterator<Container, MySelf>;
     using Node   = typename Container::Node;
-
-    DLLForwardIterator(Container *pContainer, Node *pNode)
-        : Parent(pContainer, pNode) {}
+private:
+    Node *m_start;
+    bool  m_started;
+public:
+    CDLLForwardIterator(Container *pContainer, Node *pNode)
+        : Parent(pContainer, pNode), m_start(pNode), m_started(false) {}
+    CDLLForwardIterator(Container *pContainer, Node *pNode, bool sentinel)
+        : Parent(pContainer, pNode), m_start(nullptr), m_started(sentinel) {}
 
     MySelf& operator++() {
-        if (this->m_pNode)
+        if (this->m_pNode) {
+            m_started = true;
             this->m_pNode = this->m_pNode->getNext();
+            if (this->m_pNode == m_start)
+                this->m_pNode = nullptr;
+        }
         return *this;
     }
 };
 
-// T: Crear DoubleLinkedListBackwardIterator (op++)
 template <typename Container>
-class DLLBackwardIterator : public general_iterator<Container, DLLBackwardIterator<Container>> {
+class CDLLBackwardIterator : public general_iterator<Container, CDLLBackwardIterator<Container>> {
 public:
-    using MySelf = DLLBackwardIterator<Container>;
+    using MySelf = CDLLBackwardIterator<Container>;
     using Parent = general_iterator<Container, MySelf>;
     using Node   = typename Container::Node;
-
-    DLLBackwardIterator(Container *pContainer, Node *pNode)
-        : Parent(pContainer, pNode) {}
+private:
+    Node *m_start;
+    bool  m_started;
+public:
+    CDLLBackwardIterator(Container *pContainer, Node *pNode)
+        : Parent(pContainer, pNode), m_start(pNode), m_started(false) {}
+    CDLLBackwardIterator(Container *pContainer, Node *pNode, bool sentinel)
+        : Parent(pContainer, pNode), m_start(nullptr), m_started(sentinel) {}
 
     MySelf& operator++() {
-        if (this->m_pNode)
+        if (this->m_pNode) {
+            m_started = true;
             this->m_pNode = this->m_pNode->getPrev();
+            if (this->m_pNode == m_start)
+                this->m_pNode = nullptr;
+        }
         return *this;
     }
 };
 
 template <typename Trait>
-class DoubleLinkedList : public LinkedList<Trait> {
+class CircularDoubleLinkedList : public LinkedList<Trait> {
 public:
     using value_type        = typename Trait::value_type;
     using Node              = typename Trait::Node;
     using Comp              = typename Trait::Comp;
-    using MySelf            = DoubleLinkedList<Trait>;
-    using forward_iterator  = DLLForwardIterator<MySelf>;
-    using backward_iterator = DLLBackwardIterator<MySelf>;
+    using MySelf            = CircularDoubleLinkedList<Trait>;
+    using forward_iterator  = CDLLForwardIterator<MySelf>;
+    using backward_iterator = CDLLBackwardIterator<MySelf>;
     friend forward_iterator;
     friend backward_iterator;
 
@@ -80,17 +81,17 @@ private:
     void internal_insert(const value_type &value, Ref ref);
 
 public:
-    DoubleLinkedList() : LinkedList<Trait>() {}
+    CircularDoubleLinkedList() : LinkedList<Trait>() {}
 
-    DoubleLinkedList(const DoubleLinkedList &other);
+    CircularDoubleLinkedList(const CircularDoubleLinkedList &other);
 
-    DoubleLinkedList(DoubleLinkedList &&other);
+    CircularDoubleLinkedList(CircularDoubleLinkedList &&other);
 
-    DoubleLinkedList& operator=(const DoubleLinkedList &other);
+    CircularDoubleLinkedList& operator=(const CircularDoubleLinkedList &other);
 
-    DoubleLinkedList& operator=(DoubleLinkedList &&other);
+    CircularDoubleLinkedList& operator=(CircularDoubleLinkedList &&other);
 
-    virtual ~DoubleLinkedList();
+    virtual ~CircularDoubleLinkedList();
 
     void clear();
 
@@ -102,11 +103,10 @@ public:
     value_type& operator[](size_t index) override;
     size_t  size() const override;
 
-    // T: usar en un bucle nativo foreach
     forward_iterator  begin()  { return forward_iterator(this, this->m_pRoot); }
-    forward_iterator  end()    { return forward_iterator(this, nullptr); }
+    forward_iterator  end()    { return forward_iterator(this, nullptr, true); }
     backward_iterator rbegin() { return backward_iterator(this, this->m_tail); }
-    backward_iterator rend()   { return backward_iterator(this, nullptr); }
+    backward_iterator rend()   { return backward_iterator(this, nullptr, true); }
 
     template <typename Func, typename... Args>
     void ForEach(Func func, Args &&...args) {
@@ -116,7 +116,6 @@ public:
             func(item, std::forward<Args>(args)...);
     }
 
-    // T: Otras mejoras libres #2
     template <typename Func, typename... Args>
     void ReverseForEach(Func func, Args &&...args) {
         unique_lock<shared_mutex> lock(this->m_mtx);
@@ -125,22 +124,36 @@ public:
             func(*it, std::forward<Args>(args)...);
     }
 
-    // T: operator<<
-    friend ostream& operator<<(ostream &os, const DoubleLinkedList &list) {
-        shared_lock<shared_mutex> lock(list.m_mtx);
-        os << "[";
-        Node *act = list.m_pRoot;
-        while (act) {
-            os << "(" << act->getData() << "," << act->getRef() << ")";
-            if (act->getNext()) os << ",";
+    template <typename Func, typename... Args>
+    void circularForEach(size_t vueltas, Func func, Args &&...args) {
+        unique_lock<shared_mutex> lock(this->m_mtx);
+        if (!this->m_pRoot || vueltas == 0) return;
+        Node  *act   = this->m_pRoot;
+        size_t pasos = this->m_size * vueltas;
+        for (size_t i = 0; i < pasos; ++i) {
+            func(act->getDataRef(), std::forward<Args>(args)...);
             act = act->getNext();
         }
+    }
+
+    friend ostream& operator<<(ostream &os, const CircularDoubleLinkedList &list) {
+        shared_lock<shared_mutex> lock(list.m_mtx);
+        os << "[";
+        if (list.m_pRoot) {
+            Node *act = list.m_pRoot;
+            do {
+                os << "(" << act->getData() << "," << act->getRef() << ")";
+                act = act->getNext();
+                if (act != list.m_pRoot) os << ",";
+            } while (act != list.m_pRoot);
+        }
         os << "]";
+        if (list.m_pRoot)
+            os << " ->root(" << list.m_pRoot->getData() << "," << list.m_pRoot->getRef() << ")";
         return os;
     }
 
-    // T: operator>>
-    friend istream& operator>>(istream &is, DoubleLinkedList &list) {
+    friend istream& operator>>(istream &is, CircularDoubleLinkedList &list) {
         char ch;
         if (!(is >> ch) || ch != '[') {
             is.clear(ios_base::failbit);
@@ -159,12 +172,15 @@ public:
     }
 };
 
+// T: Adaptar la insercion (internal_insert)
 template <typename Trait>
-void DoubleLinkedList<Trait>::internal_insert(const value_type &value, Ref ref) {
+void CircularDoubleLinkedList<Trait>::internal_insert(const value_type &value, Ref ref) {
     Node *newNode = new Node(value, ref);
     this->m_size++;
 
     if (!this->m_pRoot) {
+        newNode->setNext(newNode);
+        newNode->setPrev(newNode);
         this->m_pRoot = newNode;
         this->m_tail  = newNode;
         return;
@@ -172,39 +188,41 @@ void DoubleLinkedList<Trait>::internal_insert(const value_type &value, Ref ref) 
 
     if (this->m_comp(value, this->m_pRoot->getDataRef())) {
         newNode->setNext(this->m_pRoot);
+        newNode->setPrev(this->m_tail);
         this->m_pRoot->setPrev(newNode);
+        this->m_tail->setNext(newNode);
         this->m_pRoot = newNode;
         return;
     }
 
     Node *act = this->m_pRoot;
-    while (act->getNext() && !this->m_comp(value, act->getNext()->getDataRef())) {
+    while (act->getNext() != this->m_pRoot && !this->m_comp(value, act->getNext()->getDataRef())) {
         act = act->getNext();
     }
 
-    newNode->setNext(act->getNext());
+    Node *siguiente = act->getNext();
+    newNode->setNext(siguiente);
     newNode->setPrev(act);
-    if (act->getNext())
-        act->getNext()->setPrev(newNode);
-    else
-        this->m_tail = newNode;
     act->setNext(newNode);
+    siguiente->setPrev(newNode);
+
+    if (act == this->m_tail)
+        this->m_tail = newNode;
 }
 
-// T: Copy constructor / Copy assignment
 template <typename Trait>
-DoubleLinkedList<Trait>::DoubleLinkedList(const DoubleLinkedList &other) : LinkedList<Trait>() {
+CircularDoubleLinkedList<Trait>::CircularDoubleLinkedList(const CircularDoubleLinkedList &other) : LinkedList<Trait>() {
     shared_lock<shared_mutex> lock(other.m_mtx);
+    if (!other.m_pRoot) return;
     Node *curr = other.m_pRoot;
-    while (curr) {
+    do {
         push_back(curr->getData(), curr->getRef());
         curr = curr->getNext();
-    }
+    } while (curr != other.m_pRoot);
 }
 
-// T: Move constructor / Move assignment
 template <typename Trait>
-DoubleLinkedList<Trait>::DoubleLinkedList(DoubleLinkedList &&other) : LinkedList<Trait>() {
+CircularDoubleLinkedList<Trait>::CircularDoubleLinkedList(CircularDoubleLinkedList &&other) : LinkedList<Trait>() {
     unique_lock<shared_mutex> lock(other.m_mtx);
     this->m_pRoot = std::exchange(other.m_pRoot, nullptr);
     this->m_tail  = std::exchange(other.m_tail, nullptr);
@@ -212,21 +230,22 @@ DoubleLinkedList<Trait>::DoubleLinkedList(DoubleLinkedList &&other) : LinkedList
 }
 
 template <typename Trait>
-DoubleLinkedList<Trait>& DoubleLinkedList<Trait>::operator=(const DoubleLinkedList &other) {
+CircularDoubleLinkedList<Trait>& CircularDoubleLinkedList<Trait>::operator=(const CircularDoubleLinkedList &other) {
     if (this != &other) {
         clear();
         shared_lock<shared_mutex> lock(other.m_mtx);
+        if (!other.m_pRoot) return *this;
         Node *curr = other.m_pRoot;
-        while (curr) {
+        do {
             push_back(curr->getData(), curr->getRef());
             curr = curr->getNext();
-        }
+        } while (curr != other.m_pRoot);
     }
     return *this;
 }
 
 template <typename Trait>
-DoubleLinkedList<Trait>& DoubleLinkedList<Trait>::operator=(DoubleLinkedList &&other) {
+CircularDoubleLinkedList<Trait>& CircularDoubleLinkedList<Trait>::operator=(CircularDoubleLinkedList &&other) {
     if (this != &other) {
         clear();
         unique_lock<shared_mutex> lock(other.m_mtx);
@@ -238,62 +257,79 @@ DoubleLinkedList<Trait>& DoubleLinkedList<Trait>::operator=(DoubleLinkedList &&o
 }
 
 template <typename Trait>
-DoubleLinkedList<Trait>::~DoubleLinkedList() {
+CircularDoubleLinkedList<Trait>::~CircularDoubleLinkedList() {
     clear();
 }
 
 template <typename Trait>
-void DoubleLinkedList<Trait>::clear() {
+void CircularDoubleLinkedList<Trait>::clear() {
     unique_lock<shared_mutex> lock(this->m_mtx);
+    if (!this->m_pRoot) return;
+
+    this->m_tail->setNext(nullptr);
+    this->m_pRoot->setPrev(nullptr);
+
     Node *curr = this->m_pRoot;
     while (curr) {
         Node *next = curr->getNext();
         delete curr;
         curr = next;
     }
+
     this->m_pRoot = nullptr;
     this->m_tail  = nullptr;
     this->m_size  = 0;
 }
 
+// T: Adaptar la insercion (push_front)
 template <typename Trait>
-void DoubleLinkedList<Trait>::push_front(value_type value, Ref ref) {
+void CircularDoubleLinkedList<Trait>::push_front(value_type value, Ref ref) {
     unique_lock<shared_mutex> lock(this->m_mtx);
     Node *newNode = new Node(value, ref);
     if (!this->m_pRoot) {
+        newNode->setNext(newNode);
+        newNode->setPrev(newNode);
         this->m_pRoot = newNode;
         this->m_tail  = newNode;
     } else {
         newNode->setNext(this->m_pRoot);
+        newNode->setPrev(this->m_tail);
         this->m_pRoot->setPrev(newNode);
+        this->m_tail->setNext(newNode);
         this->m_pRoot = newNode;
     }
     this->m_size++;
 }
 
+// T: Adaptar la insercion (push_back)
 template <typename Trait>
-void DoubleLinkedList<Trait>::push_back(value_type value, Ref ref) {
+void CircularDoubleLinkedList<Trait>::push_back(value_type value, Ref ref) {
     unique_lock<shared_mutex> lock(this->m_mtx);
     Node *newNode = new Node(value, ref);
     if (!this->m_pRoot) {
+        newNode->setNext(newNode);
+        newNode->setPrev(newNode);
         this->m_pRoot = newNode;
         this->m_tail  = newNode;
     } else {
+        newNode->setNext(this->m_pRoot);
         newNode->setPrev(this->m_tail);
         this->m_tail->setNext(newNode);
+        this->m_pRoot->setPrev(newNode);
         this->m_tail = newNode;
     }
     this->m_size++;
 }
 
+// T: Adaptar la insercion (insert)
 template <typename Trait>
-void DoubleLinkedList<Trait>::insert(const value_type &value, Ref ref) {
+void CircularDoubleLinkedList<Trait>::insert(const value_type &value, Ref ref) {
     unique_lock<shared_mutex> lock(this->m_mtx);
     internal_insert(value, ref);
 }
 
 template <typename Trait>
-std::tuple<typename DoubleLinkedList<Trait>::value_type, Ref> DoubleLinkedList<Trait>::pop_front() {
+std::tuple<typename CircularDoubleLinkedList<Trait>::value_type, Ref> CircularDoubleLinkedList<Trait>::pop_front() {
     unique_lock<shared_mutex> lock(this->m_mtx);
     if (!this->m_pRoot) throw runtime_error("La lista esta vacia");
 
@@ -305,7 +341,8 @@ std::tuple<typename DoubleLinkedList<Trait>::value_type, Ref> DoubleLinkedList<T
         this->m_tail  = nullptr;
     } else {
         this->m_pRoot = temp->getNext();
-        this->m_pRoot->setPrev(nullptr);
+        this->m_pRoot->setPrev(this->m_tail);
+        this->m_tail->setNext(this->m_pRoot);
     }
 
     delete temp;
@@ -313,9 +350,8 @@ std::tuple<typename DoubleLinkedList<Trait>::value_type, Ref> DoubleLinkedList<T
     return result;
 }
 
-// T: Otras mejoras libres #1
 template <typename Trait>
-std::tuple<typename DoubleLinkedList<Trait>::value_type, Ref> DoubleLinkedList<Trait>::pop_back() {
+std::tuple<typename CircularDoubleLinkedList<Trait>::value_type, Ref> CircularDoubleLinkedList<Trait>::pop_back() {
     unique_lock<shared_mutex> lock(this->m_mtx);
     if (!this->m_pRoot) throw runtime_error("La lista esta vacia");
 
@@ -329,7 +365,8 @@ std::tuple<typename DoubleLinkedList<Trait>::value_type, Ref> DoubleLinkedList<T
         Node *prev = this->m_tail->getPrev();
         delete this->m_tail;
         this->m_tail = prev;
-        this->m_tail->setNext(nullptr);
+        this->m_tail->setNext(this->m_pRoot);
+        this->m_pRoot->setPrev(this->m_tail);
     }
 
     this->m_size--;
@@ -337,7 +374,7 @@ std::tuple<typename DoubleLinkedList<Trait>::value_type, Ref> DoubleLinkedList<T
 }
 
 template <typename Trait>
-typename DoubleLinkedList<Trait>::value_type& DoubleLinkedList<Trait>::operator[](size_t index) {
+typename CircularDoubleLinkedList<Trait>::value_type& CircularDoubleLinkedList<Trait>::operator[](size_t index) {
     shared_lock<shared_mutex> lock(this->m_mtx);
     if (index >= this->m_size) throw out_of_range("Indice fuera de rango");
     Node *act = this->m_pRoot;
@@ -347,9 +384,9 @@ typename DoubleLinkedList<Trait>::value_type& DoubleLinkedList<Trait>::operator[
 }
 
 template <typename Trait>
-size_t DoubleLinkedList<Trait>::size() const {
+size_t CircularDoubleLinkedList<Trait>::size() const {
     shared_lock<shared_mutex> lock(this->m_mtx);
     return this->m_size;
 }
 
-#endif // __DOUBLELINKEDLIST_H__
+#endif // __CIRCULARDOUBLELINKEDLIST_H__
